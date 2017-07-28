@@ -99,6 +99,7 @@ get_short_description() {
     VIRTUALBOX_VERSION=$(VirtualBox --help | head -n 1 | awk '{print $NF}')
     PARALLELS_VERSION=$(prlctl --version | awk '{print $3}')
     VMWARE_VERSION=10.0.10
+    HYPERV_VERSION=$(powershell -Command '(Get-Item C:\Windows\System32\vmms.exe).VersionInfo.FileVersion' | awk '{print $1}')
     SHORT_DESCRIPTION="Ubuntu${EDITION_STRING} ${PRETTY_VERSION} (${BIT_STRING})${DOCKER_STRING}"
 }
 
@@ -153,10 +154,12 @@ create_description() {
     VIRTUALBOX_VERSION=$(VirtualBox --help | head -n 1 | awk '{print $NF}')
     PARALLELS_VERSION=$(prlctl --version | awk '{print $3}')
     VMWARE_VERSION=10.0.10
+    HYPERV_VERSION=$(powershell -Command '(Get-Item C:\Windows\System32\vmms.exe).VersionInfo.FileVersion' | awk '{print $1}')
 
     VMWARE_BOX_FILE=box/vmware/${BOX_NAME}${BOX_SUFFIX}
     VIRTUALBOX_BOX_FILE=box/virtualbox/${BOX_NAME}${BOX_SUFFIX}
     PARALLELS_BOX_FILE=box/parallels/${BOX_NAME}${BOX_SUFFIX}
+    HYPERV_BOX_FILE=box/hyperv/${BOX_NAME}${BOX_SUFFIX}
     DESCRIPTION="Ubuntu${EDITION_STRING} ${PRETTY_VERSION} (${BIT_STRING})${DOCKER_STRING}
 
 "
@@ -171,6 +174,10 @@ create_description() {
     if [[ -e ${PARALLELS_BOX_FILE} ]]; then
         FILESIZE=$(du -k -h "${PARALLELS_BOX_FILE}" | cut -f1)
         DESCRIPTION=${DESCRIPTION}"Parallels ${FILESIZE}B/"
+    fi
+    if [[ -e ${HYPERV_BOX_FILE} ]]; then
+        FILESIZE=$(du -k -h "${HYPERV_BOX_FILE}" | cut -f1)
+        DESCRIPTION=${DESCRIPTION}"Hyper-V ${FILESIZE}B/"
     fi
     DESCRIPTION=${DESCRIPTION%?}
 
@@ -188,6 +195,11 @@ VirtualBox Guest Additions ${VIRTUALBOX_VERSION}"
         DESCRIPTION="${DESCRIPTION}
 
 Parallels Tools ${PARALLELS_VERSION}"
+    fi
+    if [[ -e ${HYPERV_BOX_FILE} ]]; then
+        DESCRIPTION="${DESCRIPTION}
+
+Hyper-V ${HYPERV_VERSION}"
     fi
 
     VERSION_JSON=$(
@@ -265,6 +277,11 @@ atlas_publish() {
     if [[ -e ${PARALLELS_BOX_FILE} ]]; then
         PROVIDER=parallels
         PROVIDER_URL=${BOXCUTTER_BASE_URL}/parallels${PARALLELS_VERSION}/${BOX_NAME}${BOX_SUFFIX}
+        publish_provider ${atlas_username} ${atlas_access_token}
+    fi
+    if [[ -e ${HYPERV_BOX_FILE} ]]; then
+        PROVIDER=hyperv
+        PROVIDER_URL=${BOXCUTTER_BASE_URL}/hyperv${HYPERV_VERSION}/${BOX_NAME}${BOX_SUFFIX}
         publish_provider ${atlas_username} ${atlas_access_token}
     fi
 
